@@ -316,11 +316,27 @@ Existing `sync.sendMessage()` already sends `model` and `permissionMode` from se
 - [x] Push current `main` to `origin/main`.
 - [x] Create dedicated branch `feat/qwen-code-integration`.
 - [x] Confirm local `qwen` exists and reports version `0.16.0`.
-- [ ] Run a local ACP smoke test with a temporary Happy home:
+- [x] Run a local ACP smoke test:
 
 ```bash
 HAPPY_HOME_DIR=~/.happy-qwen-dev happy acp qwen
 ```
+
+The temporary Happy home correctly stops at `Not authenticated`. The real smoke used the default authenticated Happy home:
+
+```bash
+HAPPY_DISABLE_CAFFEINATE=1 packages/happy-cli/bin/happy.mjs acp qwen --verbose
+```
+
+Observed:
+
+- Happy session creation succeeded.
+- Qwen ACP initialized through `qwen --acp`.
+- Qwen returned `configOptions=2`, `modes=5`, `models=2`.
+- Qwen mode metadata included `plan`, `default`, `auto-edit`, `auto`, and `yolo`.
+- Qwen model metadata included `coder-model(qwen-oauth)` and `glm-5.1(openai)`.
+- Qwen slash command metadata was received.
+- `Ctrl-C` stopped the smoke process cleanly.
 
 If auth is missing, run `qwen auth` outside Happy and retry.
 
@@ -385,14 +401,14 @@ pnpm --filter happy-agent test
 
 Capture a real Qwen ACP transcript and verify these event classes render correctly:
 
-- [ ] Session init/ready.
+- [x] Session init/ready.
 - [ ] Plain assistant text.
 - [ ] Tool call start/end.
 - [ ] Permission request/response.
-- [ ] Model list and current model metadata.
-- [ ] Operating mode list and current mode metadata.
+- [x] Model list and current model metadata.
+- [x] Operating mode list and current mode metadata.
 - [ ] Error message when Qwen auth/config is missing.
-- [ ] Graceful cancel/kill.
+- [x] Graceful cancel/kill.
 
 If Qwen emits ACP content that existing `AcpSessionManager` does not map well:
 
