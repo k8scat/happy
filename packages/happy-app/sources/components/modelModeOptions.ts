@@ -15,7 +15,7 @@ export type EffortLevel = ModeOption;
 export type PermissionModeKey = string;
 export type ModelModeKey = string;
 
-export type AgentFlavor = 'claude' | 'codex' | 'gemini' | string | null | undefined;
+export type AgentFlavor = 'claude' | 'codex' | 'gemini' | 'openclaw' | 'qwen' | string | null | undefined;
 
 type Translate = (key: any) => string;
 
@@ -74,6 +74,16 @@ export function getGeminiPermissionModes(translate: Translate): PermissionMode[]
     ];
 }
 
+export function getQwenPermissionModes(translate: Translate): PermissionMode[] {
+    return [
+        { key: 'default', name: translate('agentInput.permissionMode.default'), description: null },
+        { key: 'plan', name: translate('agentInput.permissionMode.plan'), description: null },
+        { key: 'auto-edit', name: 'auto edit', description: null },
+        { key: 'auto', name: 'auto', description: null },
+        { key: 'yolo', name: translate('agentInput.codexPermissionMode.yolo'), description: null },
+    ];
+}
+
 export function getClaudeModelModes(): ModelMode[] {
     return [
         { key: 'default', name: 'default model', description: null },
@@ -117,10 +127,19 @@ export function getHardcodedPermissionModes(flavor: AgentFlavor, translate: Tran
     if (flavor === 'openclaw') {
         return getOpenClawPermissionModes(translate);
     }
+    if (flavor === 'qwen') {
+        return getQwenPermissionModes(translate);
+    }
     return getClaudePermissionModes(translate);
 }
 
 export function getOpenClawModelModes(): ModelMode[] {
+    return [
+        { key: 'default', name: 'default model', description: null },
+    ];
+}
+
+export function getQwenModelModes(): ModelMode[] {
     return [
         { key: 'default', name: 'default model', description: null },
     ];
@@ -135,6 +154,9 @@ export function getHardcodedModelModes(flavor: AgentFlavor, _translate: Translat
     }
     if (flavor === 'openclaw') {
         return getOpenClawModelModes();
+    }
+    if (flavor === 'qwen') {
+        return getQwenModelModes();
     }
     return getClaudeModelModes();
 }

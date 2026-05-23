@@ -34,10 +34,18 @@ This will:
 happy codex
 happy gemini
 happy openclaw
+happy qwen
 
 # or any ACP-compatible CLI
+happy acp qwen
 happy acp opencode
 happy acp -- custom-agent --flag
+```
+
+Qwen Code uses the Qwen CLI's local configuration. Install the `qwen` binary, run `qwen auth` if needed, and pass Qwen-specific flags after `--`:
+
+```bash
+happy qwen -- --model qwen-plus
 ```
 
 ## Daemon
@@ -101,6 +109,7 @@ happy connect status
 | `happy codex` | Start Codex mode |
 | `happy gemini` | Start Gemini CLI session |
 | `happy openclaw` | Start OpenClaw session |
+| `happy qwen` | Start Qwen Code session through ACP |
 | `happy acp` | Start any ACP-compatible agent |
 | `happy resume <id>` | Resume a previous session |
 | `happy notify` | Send push notification to your devices |
@@ -145,6 +154,9 @@ yarn workspace happy cli --help
 - For Claude: `claude` CLI installed & logged in
 - For Codex: `codex` CLI installed & logged in
 - For Gemini: `npm install -g @google/gemini-cli` + `happy connect gemini`
+- For Qwen Code: `qwen` CLI installed and authenticated with `qwen auth` or local Qwen settings
+
+If Happy cannot start Qwen Code, first check `qwen --version` and `qwen auth`. Provider and model selection are primarily managed by Qwen in `~/.qwen/settings.json`.
 
 ## License
 

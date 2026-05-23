@@ -444,6 +444,7 @@ export const en = {
             codex: 'Codex',
             gemini: 'Gemini',
             openclaw: 'OpenClaw',
+            qwen: 'Qwen Code',
         },
         model: {
             title: 'MODEL',

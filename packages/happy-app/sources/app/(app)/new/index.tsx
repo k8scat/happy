@@ -63,6 +63,7 @@ const agentIcons = {
     codex: require('@/assets/images/icon-gpt.png'),
     openclaw: require('@/assets/images/icon-openclaw.png'),
     gemini: require('@/assets/images/icon-gemini.png'),
+    qwen: require('@/assets/images/icon-gpt.png'),
 };
 
 type AgentKey = NewSessionAgentType;
@@ -71,6 +72,7 @@ const ALL_AGENTS: { key: AgentKey; label: string }[] = [
     { key: 'codex', label: 'codex' },
     { key: 'openclaw', label: 'openclaw' },
     { key: 'gemini', label: 'gemini' },
+    { key: 'qwen', label: 'qwen code' },
 ];
 
 type PickerItem = { key: string; label: string; subtitle?: string; dimmed?: boolean };
@@ -113,6 +115,8 @@ function getPermissionStyle(key: string): PermissionStyle | null {
     switch (key) {
         case 'acceptEdits':
         case 'auto_edit':
+        case 'auto-edit':
+        case 'auto':
             return { color: '#A78BFA', icon: 'play-forward' };
         case 'plan':
             return { color: '#5EABA4', icon: 'pause' };

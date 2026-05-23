@@ -426,6 +426,26 @@ describe('runAcp', () => {
     ]));
   });
 
+  it('creates Qwen ACP sessions with qwen flavor metadata', async () => {
+    const runPromise = runAcp({
+      credentials: { token: 'token', encryption: { type: 'legacy', secret: new Uint8Array(32) } },
+      agentName: 'qwen',
+      command: 'qwen',
+      args: ['--acp'],
+    });
+
+    await vi.waitFor(() => {
+      expect(mocks.backendState.startSessionCalls).toBe(1);
+    });
+
+    await mocks.getKillHandler()!();
+    await runPromise;
+
+    expect(mocks.mockGetOrCreateSession).toHaveBeenCalledWith(expect.objectContaining({
+      metadata: expect.objectContaining({ flavor: 'qwen' }),
+    }));
+  });
+
   it('exits when backend reports terminal startup status', async () => {
     mocks.backendState.startSessionMessages = [
       { type: 'status', status: 'error', detail: 'spawn opencode ENOENT' },

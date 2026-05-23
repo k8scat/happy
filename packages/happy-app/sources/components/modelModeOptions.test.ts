@@ -4,9 +4,12 @@ import {
     getAvailablePermissionModes,
     getCodexModelModes,
     getClaudePermissionModes,
+    getDefaultEffortKeyForModel,
     getDefaultEffortKey,
     getDefaultModelKey,
     getDefaultPermissionModeKey,
+    getHardcodedModelModes,
+    getHardcodedPermissionModes,
     mapMetadataOptions,
     resolveCurrentOption,
 } from './modelModeOptions';
@@ -53,6 +56,23 @@ describe('modelModeOptions', () => {
         expect(getDefaultPermissionModeKey('codex')).toBe('yolo');
         expect(getDefaultModelKey('codex')).toBe('gpt-5.5');
         expect(getDefaultEffortKey('codex')).toBe('medium');
+        expect(getDefaultPermissionModeKey('qwen')).toBe('default');
+        expect(getDefaultModelKey('qwen')).toBe('default');
+        expect(getDefaultEffortKey('qwen')).toBeNull();
+    });
+
+    it('builds conservative Qwen model and permission fallbacks', () => {
+        expect(getHardcodedModelModes('qwen', translate)).toEqual([
+            { key: 'default', name: 'default model', description: null },
+        ]);
+        expect(getHardcodedPermissionModes('qwen', translate).map((mode) => mode.key)).toEqual([
+            'default',
+            'plan',
+            'auto-edit',
+            'auto',
+            'yolo',
+        ]);
+        expect(getDefaultEffortKeyForModel('qwen', 'default')).toBeNull();
     });
 
     it('prefers metadata models over hardcoded fallbacks', () => {
@@ -99,6 +119,20 @@ describe('modelModeOptions', () => {
         expect(modes).toEqual([
             { key: 'build', name: 'Build', description: 'Do build steps' },
             { key: 'plan', name: 'Plan', description: 'Plan first' },
+        ]);
+    });
+
+    it('prefers Qwen metadata models and operating modes over fallback options', () => {
+        const metadata = {
+            models: [{ code: 'qwen-plus', value: 'Qwen Plus', description: 'Configured provider' }],
+            operatingModes: [{ code: 'custom-mode', value: 'Custom Mode', description: 'From ACP' }],
+        } as any;
+
+        expect(getAvailableModels('qwen', metadata, translate)).toEqual([
+            { key: 'qwen-plus', name: 'Qwen Plus', description: 'Configured provider' },
+        ]);
+        expect(getAvailablePermissionModes('qwen', metadata, translate)).toEqual([
+            { key: 'custom-mode', name: 'Custom Mode', description: 'From ACP' },
         ]);
     });
 

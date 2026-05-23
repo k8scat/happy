@@ -62,6 +62,7 @@ interface AgentInputProps {
             claude: boolean | null;
             codex: boolean | null;
             gemini?: boolean | null;
+            qwen?: boolean | null;
         };
     };
     autocompletePrefixes: string[];
@@ -75,7 +76,7 @@ interface AgentInputProps {
     };
     alwaysShowContextSize?: boolean;
     onFileViewerPress?: () => void;
-    agentType?: 'claude' | 'codex' | 'gemini' | 'openclaw';
+    agentType?: 'claude' | 'codex' | 'gemini' | 'openclaw' | 'qwen';
     onAgentClick?: () => void;
     machineName?: string | null;
     onMachineClick?: () => void;
@@ -414,6 +415,24 @@ const AgentInputStatusRow = React.memo(function AgentInputStatusRow(p: StatusRow
                                             ...Typography.default()
                                         }}>
                                             gemini
+                                        </Text>
+                                    </View>
+                                )}
+                                {p.connectionStatus.cliStatus.qwen !== undefined && (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                        <Text style={{
+                                            fontSize: 11,
+                                            color: p.connectionStatus.cliStatus.qwen ? theme.colors.success : theme.colors.textDestructive,
+                                            ...Typography.default()
+                                        }}>
+                                            {p.connectionStatus.cliStatus.qwen ? '✓' : '✗'}
+                                        </Text>
+                                        <Text style={{
+                                            fontSize: 11,
+                                            color: p.connectionStatus.cliStatus.qwen ? theme.colors.success : theme.colors.textDestructive,
+                                            ...Typography.default()
+                                        }}>
+                                            qwen
                                         </Text>
                                     </View>
                                 )}
@@ -1281,7 +1300,7 @@ export const AgentInput = React.memo(React.forwardRef<MultiTextInputHandle, Agen
                                             fontWeight: '600',
                                             ...Typography.default('semiBold'),
                                         }}>
-                                            {props.agentType === 'claude' ? t('agentInput.agent.claude') : props.agentType === 'codex' ? t('agentInput.agent.codex') : props.agentType === 'openclaw' ? t('agentInput.agent.openclaw') : t('agentInput.agent.gemini')}
+                                            {props.agentType === 'claude' ? t('agentInput.agent.claude') : props.agentType === 'codex' ? t('agentInput.agent.codex') : props.agentType === 'openclaw' ? t('agentInput.agent.openclaw') : props.agentType === 'qwen' ? t('agentInput.agent.qwen') : t('agentInput.agent.gemini')}
                                         </Text>
                                     </Pressable>
                                 )}

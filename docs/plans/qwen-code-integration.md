@@ -18,7 +18,7 @@ This should be a moderate, low-risk integration because Happy already has the ri
 
 ## Sources Checked
 
-- Local Qwen CLI: `qwen --version` -> `0.15.6`
+- Local Qwen CLI: `qwen --version` -> `0.16.0`
 - Qwen Code source snapshot: `QwenLM/qwen-code` at `0cb9ff0` from `2026-05-22`
 - Qwen README documents interactive, headless, SDK, and experimental daemon modes.
 - Qwen CLI source starts ACP mode when `argv.acp || argv.experimentalAcp`.
@@ -315,7 +315,7 @@ Existing `sync.sendMessage()` already sends `model` and `permissionMode` from se
 
 - [x] Push current `main` to `origin/main`.
 - [x] Create dedicated branch `feat/qwen-code-integration`.
-- [x] Confirm local `qwen` exists and reports version `0.15.6`.
+- [x] Confirm local `qwen` exists and reports version `0.16.0`.
 - [ ] Run a local ACP smoke test with a temporary Happy home:
 
 ```bash
@@ -326,27 +326,26 @@ If auth is missing, run `qwen auth` outside Happy and retry.
 
 ### Phase 0.5: Server and wire compatibility check
 
-- [ ] Confirm server routes do not parse encrypted session metadata for agent/flavor-specific behavior.
-- [ ] Confirm server routes do not parse encrypted machine metadata for `cliAvailability` keys.
-- [ ] Confirm no Prisma migration is needed for Qwen because `Session.metadata` and `Machine.metadata` are encrypted strings.
-- [ ] Decide whether Qwen should support cloud-stored credentials in v1:
-  - If no, leave `connectRoutes.ts` unchanged.
+- [x] Confirm server routes do not parse encrypted session metadata for agent/flavor-specific behavior.
+- [x] Confirm server routes do not parse encrypted machine metadata for `cliAvailability` keys.
+- [x] Confirm no Prisma migration is needed for Qwen because `Session.metadata` and `Machine.metadata` are encrypted strings.
+- [x] Decide whether Qwen should support cloud-stored credentials in v1:
+  - If no, leave `connectRoutes.ts` unchanged. Chosen for v1.
   - If yes, add `qwen` to `/v1/connect/:vendor/*`, update CLI connect flow, and document credential security.
-- [ ] Widen `packages/happy-wire/src/messageMeta.ts` `permissionMode` if app/CLI code paths still depend on it for Qwen modes such as `auto-edit` and `auto`.
-- [ ] Add a server regression test only if a server-side vendor token or route/schema change is introduced.
+- [x] Widen `packages/happy-wire/src/messageMeta.ts` `permissionMode` if app/CLI code paths still depend on it for Qwen modes such as `auto-edit` and `auto`.
+- [x] Add a server regression test only if a server-side vendor token or route/schema change is introduced. No server route/schema change was introduced.
 
 ### Phase 1: CLI ACP MVP
 
-- [ ] Add `qwen` to `KNOWN_ACP_AGENTS`.
-- [ ] Update `acpAgentConfig.test.ts` expectations and known-agent cases.
-- [ ] Add Qwen flavor support in `runAcp.ts`:
+- [x] Add `qwen` to `KNOWN_ACP_AGENTS`.
+- [x] Update `acpAgentConfig.test.ts` expectations and known-agent cases.
+- [x] Add Qwen flavor support in `runAcp.ts`:
   - `resolveSessionFlavor("qwen") -> "qwen"` if type/schema allows it.
-  - Otherwise keep `flavor: "acp"` for the first commit and document that app-specific UI needs a follow-up schema widen.
-- [ ] Add `happy qwen` route in `packages/happy-cli/src/index.ts`.
-- [ ] Update CLI help text with `happy qwen` and `happy acp qwen`.
-- [ ] Ensure passthrough args do not duplicate `--acp`.
-- [ ] Add/adjust unit tests for route/config behavior.
-- [ ] Run:
+- [x] Add `happy qwen` route in `packages/happy-cli/src/index.ts`.
+- [x] Update CLI help text with `happy qwen` and `happy acp qwen`.
+- [x] Ensure passthrough args do not duplicate `--acp`.
+- [x] Add/adjust unit tests for route/config behavior.
+- [x] Run:
 
 ```bash
 pnpm --filter happy exec vitest run src/agent/acp/acpAgentConfig.test.ts src/agent/acp/runAcp.test.ts
@@ -355,14 +354,14 @@ pnpm --filter happy typecheck
 
 ### Phase 2: Daemon and machine support
 
-- [ ] Add `qwen` to daemon accepted agent commands.
-- [ ] Add `qwen` to `SpawnSessionOptions.agent` in CLI common handlers.
-- [ ] Add `qwen` to `SupportedAgent` in `packages/happy-agent`.
-- [ ] Add `qwen` CLI availability detection.
-- [ ] Add `qwen` to machine metadata schemas/types.
-- [ ] Update machine detail UI to display Qwen CLI installed/not found.
-- [ ] Add tests for CLI detection and spawn validation.
-- [ ] Run:
+- [x] Add `qwen` to daemon accepted agent commands.
+- [x] Add `qwen` to `SpawnSessionOptions.agent` in CLI common handlers.
+- [x] Add `qwen` to `SupportedAgent` in `packages/happy-agent`.
+- [x] Add `qwen` CLI availability detection.
+- [x] Add `qwen` to machine metadata schemas/types.
+- [x] Update machine detail UI to display Qwen CLI installed/not found.
+- [x] Add tests for CLI detection and spawn validation.
+- [x] Run:
 
 ```bash
 pnpm --filter happy exec vitest run src/utils/detectCLI.test.ts
@@ -371,16 +370,16 @@ pnpm --filter happy-agent test
 
 ### Phase 3: App first-class agent UX
 
-- [ ] Add Qwen to the app new-session picker.
-- [ ] Add Qwen to `NewSessionAgentType`.
-- [ ] Add Qwen to app spawn op types.
-- [ ] Add Qwen defaults in `agentDefaults.ts`.
-- [ ] Add Qwen fallback permission modes in `modelModeOptions.ts`.
-- [ ] Keep Qwen model fallback as `Default` unless metadata provides concrete models.
-- [ ] Add Qwen icon/visual treatment consistent with existing agent picker design.
-- [ ] Update session info flavor label to include Qwen.
-- [ ] Add tests for default resolution, picker options, and model/mode fallbacks.
-- [ ] Run relevant app tests/typecheck.
+- [x] Add Qwen to the app new-session picker.
+- [x] Add Qwen to `NewSessionAgentType`.
+- [x] Add Qwen to app spawn op types.
+- [x] Add Qwen defaults in `agentDefaults.ts`.
+- [x] Add Qwen fallback permission modes in `modelModeOptions.ts`.
+- [x] Keep Qwen model fallback as `Default` unless metadata provides concrete models.
+- [x] Add Qwen icon/visual treatment consistent with existing agent picker design.
+- [x] Update session info flavor label to include Qwen.
+- [x] Add tests for default resolution, model/mode fallbacks, and storage compatibility.
+- [x] Run relevant app tests/typecheck.
 
 ### Phase 4: Protocol verification
 
@@ -403,7 +402,7 @@ If Qwen emits ACP content that existing `AcpSessionManager` does not map well:
 
 ### Phase 5: Documentation and release notes
 
-- [ ] Document prerequisites:
+- [x] Document prerequisites:
 
 ```bash
 brew install qwen-code
@@ -413,10 +412,10 @@ npm install -g @qwen-code/qwen-code
 qwen auth
 ```
 
-- [ ] Document `happy qwen`.
-- [ ] Document `happy acp qwen`.
-- [ ] Add troubleshooting notes for missing auth and missing `qwen` binary.
-- [ ] Mention that Qwen model/provider selection lives primarily in `~/.qwen/settings.json`.
+- [x] Document `happy qwen`.
+- [x] Document `happy acp qwen`.
+- [x] Add troubleshooting notes for missing auth and missing `qwen` binary.
+- [x] Mention that Qwen model/provider selection lives primarily in `~/.qwen/settings.json`.
 
 ## Test Plan
 

@@ -431,6 +431,7 @@ export const zhHans: TranslationStructure = {
             codex: 'Codex',
             gemini: 'Gemini',
             openclaw: 'OpenClaw',
+            qwen: 'Qwen Code',
         },
         model: {
             title: '模型',

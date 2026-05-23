@@ -354,6 +354,54 @@ Conversation history is preserved on the server, but in-flight tool calls are in
       process.exit(1)
     }
     return;
+  } else if (subcommand === 'qwen') {
+    try {
+      const { runAcp, resolveAcpAgentConfig } = await import('@/agent/acp');
+
+      let startedBy: 'daemon' | 'terminal' | undefined = undefined;
+      let verbose = false;
+      const passthroughArgs: string[] = [];
+      let customCommandMode = false;
+      for (let i = 1; i < args.length; i++) {
+        if (!customCommandMode && args[i] === '--happy-starting-mode') {
+          i += 1;
+          continue;
+        }
+        if (!customCommandMode && args[i] === '--started-by') {
+          startedBy = args[++i] as 'daemon' | 'terminal';
+          continue;
+        }
+        if (!customCommandMode && args[i] === '--verbose') {
+          verbose = true;
+          continue;
+        }
+        if (args[i] === '--') {
+          customCommandMode = true;
+          continue;
+        }
+        passthroughArgs.push(args[i]);
+      }
+
+      const resolved = resolveAcpAgentConfig(['qwen', ...passthroughArgs]);
+      const { credentials } = await authAndSetupMachineIfNeeded();
+      await ensureDaemonRunning()
+
+      await runAcp({
+        credentials,
+        startedBy,
+        verbose,
+        agentName: resolved.agentName,
+        command: resolved.command,
+        args: resolved.args,
+      });
+    } catch (error) {
+      console.error(chalk.red('Error:'), error instanceof Error ? error.message : 'Unknown error')
+      if (process.env.DEBUG) {
+        console.error(error)
+      }
+      process.exit(1)
+    }
+    return;
   } else if (subcommand === 'acp') {
     try {
       const { runAcp, resolveAcpAgentConfig } = await import('@/agent/acp');
@@ -679,6 +727,7 @@ ${chalk.bold('Usage:')}
   happy resume            Resume a previous Happy session by Happy session ID
   happy codex             Start Codex mode
   happy gemini            Start Gemini mode (ACP)
+  happy qwen              Start Qwen Code mode (ACP)
   happy acp               Start a generic ACP-compatible agent
   happy connect           Connect AI vendor API keys
   happy sandbox           Configure and manage OS-level sandboxing
@@ -699,6 +748,9 @@ ${chalk.bold('Examples:')}
   happy --claude-env ANTHROPIC_BASE_URL=http://127.0.0.1:3456
                            Use a custom API endpoint (e.g., claude-code-router)
   happy acp gemini         Start Gemini via generic ACP runner
+  happy acp qwen           Start Qwen Code via generic ACP runner
+  happy qwen -- --model qwen-plus
+                           Start Qwen Code with passthrough Qwen flags
   happy acp -- opencode --acp
                            Start a custom ACP command
   happy acp opencode --verbose

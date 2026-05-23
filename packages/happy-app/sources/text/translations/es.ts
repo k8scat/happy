@@ -430,6 +430,7 @@ export const es: TranslationStructure = {
             codex: 'Codex',
             gemini: 'Gemini',
             openclaw: 'OpenClaw',
+            qwen: 'Qwen Code',
         },
         model: {
             title: 'MODELO',

@@ -11,7 +11,7 @@
 </h1>
 
 <h4 align="center">
-Use Claude Code or Codex from anywhere with end-to-end encryption.
+Use Claude Code, Codex, or Qwen Code from anywhere with end-to-end encryption.
 </h4>
 
 <div align="center">
@@ -50,16 +50,18 @@ Step 3: Start using `happy` instead of `claude` or `codex`
 happy claude
 # or
 happy codex
+# or
+happy qwen
 ```
 
 ## How does it work?
 
-On your computer, run `happy` instead of `claude` or `happy codex` instead of `codex` to start your AI through our wrapper. When you want to control your coding agent from your phone, it restarts the session in remote mode. To switch back to your computer, just press any key on your keyboard.
+On your computer, run `happy` instead of `claude`, `happy codex` instead of `codex`, or `happy qwen` instead of `qwen` to start your AI through our wrapper. When you want to control your coding agent from your phone, it restarts the session in remote mode. To switch back to your computer, just press any key on your keyboard.
 
 ## 🔥 Why Happy Coder?
 
-- 📱 **Mobile access to Claude Code and Codex** - Check what your AI is building while away from your desk
-- 🔔 **Push notifications** - Get alerted when Claude Code and Codex needs permission or encounters errors  
+- 📱 **Mobile access to Claude Code, Codex, and Qwen Code** - Check what your AI is building while away from your desk
+- 🔔 **Push notifications** - Get alerted when your coding agent needs permission or encounters errors
 - ⚡ **Switch devices instantly** - Take control from phone or desktop with one keypress
 - 🔐 **End-to-end encrypted** - Your code never leaves your devices unencrypted
 - 🛠️ **Open source** - Audit the code yourself. No telemetry, no tracking
@@ -67,7 +69,7 @@ On your computer, run `happy` instead of `claude` or `happy codex` instead of `c
 ## 📦 Project Components
 
 - **[Happy App](https://github.com/slopus/happy/tree/main/packages/happy-app)** - Web UI + mobile client (Expo)
-- **[Happy CLI](https://github.com/slopus/happy/tree/main/packages/happy-cli)** - Command-line interface for Claude Code and Codex
+- **[Happy CLI](https://github.com/slopus/happy/tree/main/packages/happy-cli)** - Command-line interface for Claude Code, Codex, Qwen Code, and other ACP agents
 - **[Happy Agent](https://github.com/slopus/happy/tree/main/packages/happy-agent)** - Remote agent control CLI (create, send, monitor sessions)
 - **[Happy Server](https://github.com/slopus/happy/tree/main/packages/happy-server)** - Backend server for encrypted sync
 

@@ -446,6 +446,7 @@ export const pl: TranslationStructure = {
             codex: 'Codex',
             gemini: 'Gemini',
             openclaw: 'OpenClaw',
+            qwen: 'Qwen Code',
         },
         model: {
             title: 'MODEL',
