@@ -14,6 +14,58 @@ function buildToolDescription(toolName: string): string {
   return `Running ${toolName}`;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function extractPermissionToolArgs(payload: unknown): Record<string, unknown> {
+  if (!isRecord(payload)) {
+    return {};
+  }
+  const toolCall = isRecord(payload.toolCall) ? payload.toolCall : {};
+  const candidates = [
+    payload.input,
+    payload.arguments,
+    payload.rawInput,
+    payload.content,
+    toolCall.input,
+    toolCall.arguments,
+    toolCall.rawInput,
+    toolCall.content,
+  ];
+  for (const candidate of candidates) {
+    if (isRecord(candidate)) {
+      return candidate;
+    }
+  }
+  return {};
+}
+
+function extractPermissionToolName(msg: Extract<AgentMessage, { type: 'permission-request' }>): string {
+  if (isRecord(msg.payload) && typeof msg.payload.toolName === 'string' && msg.payload.toolName.length > 0) {
+    return msg.payload.toolName;
+  }
+  if (isRecord(msg.payload) && typeof msg.payload.kind === 'string' && msg.payload.kind.length > 0) {
+    return msg.payload.kind;
+  }
+  if (isRecord(msg.payload) && isRecord(msg.payload.toolCall)) {
+    const toolCall = msg.payload.toolCall;
+    if (typeof toolCall.toolName === 'string' && toolCall.toolName.length > 0) {
+      return toolCall.toolName;
+    }
+    if (typeof toolCall.kind === 'string' && toolCall.kind.length > 0) {
+      return toolCall.kind;
+    }
+  }
+  return msg.reason || 'permission';
+}
+
+function isApprovedPermissionResult(msg: Extract<AgentMessage, { type: 'tool-result' }>): boolean {
+  return isRecord(msg.result)
+    && msg.result.status === 'approved'
+    && (msg.result.decision === 'approved' || msg.result.decision === 'approved_for_session');
+}
+
 function parseThinkingPayload(payload: unknown): { text: string; streaming: boolean } {
   if (typeof payload === 'string') {
     return { text: payload, streaming: false };
@@ -158,7 +210,27 @@ export class AcpSessionManager {
       ];
     }
 
+    if (msg.type === 'permission-request') {
+      const flushed = this.flush();
+      const call = this.ensureSessionCallId(msg.id);
+      const toolName = extractPermissionToolName(msg);
+      return [
+        ...flushed,
+        createEnvelope('agent', {
+          t: 'tool-call-start',
+          call,
+          name: toolName,
+          title: buildToolTitle(toolName),
+          description: buildToolDescription(toolName),
+          args: extractPermissionToolArgs(msg.payload),
+        }, turnOptions(this.currentTurnId, this.nextTime())),
+      ];
+    }
+
     if (msg.type === 'tool-result') {
+      if (isApprovedPermissionResult(msg)) {
+        return this.flush();
+      }
       const flushed = this.flush();
       const call = this.ensureSessionCallId(msg.callId);
       return [

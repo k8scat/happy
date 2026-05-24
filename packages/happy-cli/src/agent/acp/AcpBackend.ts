@@ -34,6 +34,25 @@ import type {
 import { logger } from '@/ui/logger';
 import { delay } from '@/utils/time';
 import packageJson from '../../../package.json';
+import {
+  type TransportHandler,
+  type StderrContext,
+  type ToolNameContext,
+  DefaultTransport,
+} from '../transport';
+import {
+  type SessionUpdate,
+  type HandlerContext,
+  DEFAULT_IDLE_TIMEOUT_MS,
+  DEFAULT_TOOL_CALL_TIMEOUT_MS,
+  handleAgentMessageChunk,
+  handleAgentThoughtChunk,
+  handleToolCallUpdate,
+  handleToolCall,
+  handleLegacyMessageChunk,
+  handlePlanUpdate,
+  handleThinkingUpdate,
+} from './sessionUpdateHandlers';
 
 /**
  * Retry configuration for ACP operations
@@ -88,25 +107,34 @@ function summarizeSessionMetadataPayload(payload: unknown): string {
     : 0;
   return `configOptions=${configOptions} modes=${modes} models=${models}`;
 }
-import {
-  type TransportHandler,
-  type StderrContext,
-  type ToolNameContext,
-  DefaultTransport,
-} from '../transport';
-import {
-  type SessionUpdate,
-  type HandlerContext,
-  DEFAULT_IDLE_TIMEOUT_MS,
-  DEFAULT_TOOL_CALL_TIMEOUT_MS,
-  handleAgentMessageChunk,
-  handleAgentThoughtChunk,
-  handleToolCallUpdate,
-  handleToolCall,
-  handleLegacyMessageChunk,
-  handlePlanUpdate,
-  handleThinkingUpdate,
-} from './sessionUpdateHandlers';
+
+export function formatAcpErrorForDisplay(error: unknown): string {
+  if (error instanceof Error && error.message && error.message !== '[object Object]') {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.length > 0 && message !== '[object Object]') {
+      return message;
+    }
+    const nestedMessage = (error as { error?: { message?: unknown } }).error?.message;
+    if (typeof nestedMessage === 'string' && nestedMessage.length > 0) {
+      return nestedMessage;
+    }
+    try {
+      const serialized = JSON.stringify(error);
+      if (serialized && serialized !== '{}') {
+        return serialized;
+      }
+    } catch {
+      // Fall through to String below.
+    }
+  }
+  return String(error);
+}
 
 /**
  * Extended RequestPermissionRequest with additional fields that may be present
@@ -114,15 +142,18 @@ import {
 type ExtendedRequestPermissionRequest = RequestPermissionRequest & {
   toolCall?: {
     id?: string;
+    toolCallId?: string;
     kind?: string;
     toolName?: string;
     input?: Record<string, unknown>;
     arguments?: Record<string, unknown>;
+    rawInput?: Record<string, unknown>;
     content?: Record<string, unknown>;
   };
   kind?: string;
   input?: Record<string, unknown>;
   arguments?: Record<string, unknown>;
+  rawInput?: Record<string, unknown>;
   content?: Record<string, unknown>;
   options?: Array<{
     optionId?: string;
@@ -130,6 +161,51 @@ type ExtendedRequestPermissionRequest = RequestPermissionRequest & {
     kind?: string;
   }>;
 };
+
+type AcpPermissionToolCallLike = {
+  id?: unknown;
+  toolCallId?: unknown;
+  input?: unknown;
+  arguments?: unknown;
+  rawInput?: unknown;
+  content?: unknown;
+};
+
+type AcpPermissionRequestLike = {
+  toolCall?: AcpPermissionToolCallLike;
+  input?: unknown;
+  arguments?: unknown;
+  rawInput?: unknown;
+  content?: unknown;
+};
+
+function firstPresentInput(...values: unknown[]): unknown {
+  for (const value of values) {
+    if (value !== undefined && value !== null) {
+      return value;
+    }
+  }
+  return {};
+}
+
+export function resolveAcpPermissionToolCallId(toolCall: AcpPermissionToolCallLike | undefined): string | null {
+  const id = toolCall?.id ?? toolCall?.toolCallId;
+  return typeof id === 'string' && id.length > 0 ? id : null;
+}
+
+export function extractAcpPermissionInput(params: AcpPermissionRequestLike): unknown {
+  const toolCall = params.toolCall;
+  return firstPresentInput(
+    toolCall?.input,
+    toolCall?.arguments,
+    toolCall?.rawInput,
+    toolCall?.content,
+    params.input,
+    params.arguments,
+    params.rawInput,
+    params.content,
+  );
+}
 
 /**
  * Extended SessionNotification with additional fields
@@ -288,7 +364,9 @@ async function withRetry<T>(
     try {
       return await operation();
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+      lastError = error instanceof Error && error.message !== '[object Object]'
+        ? error
+        : new Error(formatAcpErrorForDisplay(error));
 
       const shouldRetry = options.shouldRetry ? options.shouldRetry(lastError) : true;
       if (attempt < options.maxAttempts && shouldRetry) {
@@ -571,24 +649,21 @@ export class AcpBackend implements AgentBackend {
           let toolName = toolCall?.kind || toolCall?.toolName || extendedParams.kind || 'Unknown tool';
           // Use toolCallId as the single source of truth for permission ID
           // This ensures mobile app sends back the same ID that we use to store pending requests
-          const toolCallId = toolCall?.id || randomUUID();
+          const toolCallId = resolveAcpPermissionToolCallId(toolCall) || randomUUID();
           const permissionId = toolCallId; // Use same ID for consistency!
           
           // Extract input/arguments from various possible locations FIRST (before checking toolName)
-          let input: Record<string, unknown> = {};
-          if (toolCall) {
-            input = toolCall.input || toolCall.arguments || toolCall.content || {};
-          } else {
-            // If no toolCall, try to extract from params directly
-            input = extendedParams.input || extendedParams.arguments || extendedParams.content || {};
-          }
+          const input = extractAcpPermissionInput(extendedParams);
           
           // If toolName is "other" or "Unknown tool", try to determine real tool name
           const context: ToolNameContext = {
             recentPromptHadChangeTitle: this.recentPromptHadChangeTitle,
             toolCallCountSincePrompt: this.toolCallCountSincePrompt,
           };
-          toolName = this.transport.determineToolName?.(toolName, toolCallId, input, context) ?? toolName;
+          const inputForToolName = input && typeof input === 'object' && !Array.isArray(input)
+            ? input as Record<string, unknown>
+            : {};
+          toolName = this.transport.determineToolName?.(toolName, toolCallId, inputForToolName, context) ?? toolName;
           
           if (toolName !== (toolCall?.kind || toolCall?.toolName || extendedParams.kind || 'Unknown tool')) {
             logger.debug(`[AcpBackend] Detected tool name: ${toolName} from toolCallId: ${toolCallId}`);
@@ -846,7 +921,7 @@ export class AcpBackend implements AgentBackend {
         this.sendPrompt(sessionId, initialPrompt).catch((error) => {
           // Log to file only, not console
           logger.debug('[AcpBackend] Error sending initial prompt:', error);
-          this.emit({ type: 'status', status: 'error', detail: String(error) });
+          this.emit({ type: 'status', status: 'error', detail: formatAcpErrorForDisplay(error) });
         });
       }
 
@@ -859,7 +934,7 @@ export class AcpBackend implements AgentBackend {
         this.emit({ 
           type: 'status', 
           status: 'error', 
-          detail: error instanceof Error ? error.message : String(error) 
+          detail: formatAcpErrorForDisplay(error)
         });
       }
       throw error;

@@ -63,7 +63,7 @@ const agentIcons = {
     codex: require('@/assets/images/icon-gpt.png'),
     openclaw: require('@/assets/images/icon-openclaw.png'),
     gemini: require('@/assets/images/icon-gemini.png'),
-    qwen: require('@/assets/images/icon-gpt.png'),
+    qwen: require('@/assets/images/icon-qwen.png'),
 };
 
 type AgentKey = NewSessionAgentType;

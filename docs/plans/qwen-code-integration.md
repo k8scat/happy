@@ -402,19 +402,27 @@ pnpm --filter happy-agent test
 Capture a real Qwen ACP transcript and verify these event classes render correctly:
 
 - [x] Session init/ready.
-- [ ] Plain assistant text.
-- [ ] Tool call start/end.
-- [ ] Permission request/response.
+- [x] Plain assistant text.
+- [x] Tool call start/end.
+- [x] Permission request/response.
 - [x] Model list and current model metadata.
 - [x] Operating mode list and current mode metadata.
-- [ ] Error message when Qwen auth/config is missing.
+- [x] Error message when Qwen auth/config is missing.
 - [x] Graceful cancel/kill.
 
 If Qwen emits ACP content that existing `AcpSessionManager` does not map well:
 
-- [ ] Add targeted mapper support.
-- [ ] Add fixture-based tests using the captured Qwen ACP messages.
-- [ ] Keep changes generic when possible, and Qwen-specific only when necessary.
+- [x] Add targeted mapper support.
+- [x] Add mapper tests using the captured Qwen ACP message shapes.
+- [x] Keep changes generic when possible, and Qwen-specific only when necessary.
+
+Verified against a local Happy server on `127.0.0.1:3005` with `qwen --acp`:
+
+- Plain assistant text returned `HAPPY_QWEN_TEXT_OK`.
+- Yolo-mode shell tool execution emitted `tool-call-start`, `tool-call-end`, and returned `TOOL_DONE`.
+- Default-mode write command emitted a permission request, accepted an app-side approval, emitted one matching tool end, and returned `PERMISSION_WRITE_DONE`.
+- Missing Qwen auth/config now surfaces `Authentication required: Use Qwen Code CLI to authenticate first.` instead of `[object Object]`.
+- Mapper support now handles Qwen permission payloads that use `toolCall.toolCallId` and `toolCall.rawInput`.
 
 ### Phase 5: Documentation and release notes
 

@@ -243,6 +243,67 @@ describe('AcpSessionManager tool mapping', () => {
       expect(isCuid(envelope.ev.call)).toBe(true);
     }
   });
+
+  it('maps permission requests to tool-call-start using Qwen rawInput', () => {
+    const mapper = new AcpSessionManager();
+    mapper.startTurn();
+
+    const start = mapper.mapMessage({
+      type: 'permission-request',
+      id: 'call-qwen-1',
+      reason: 'execute',
+      payload: {
+        toolName: 'execute',
+        input: [],
+        toolCall: {
+          rawInput: {
+            command: 'echo ok > /tmp/qwen-smoke.txt',
+            description: 'write a smoke file',
+          },
+        },
+      },
+    })[0];
+
+    expect(start.ev.t).toBe('tool-call-start');
+    if (start.ev.t === 'tool-call-start') {
+      expect(start.ev.name).toBe('execute');
+      expect(start.ev.args).toEqual({
+        command: 'echo ok > /tmp/qwen-smoke.txt',
+        description: 'write a smoke file',
+      });
+    }
+  });
+
+  it('keeps approved permission results open until the real tool result arrives', () => {
+    const mapper = new AcpSessionManager();
+    mapper.startTurn();
+
+    const start = mapper.mapMessage({
+      type: 'permission-request',
+      id: 'call-qwen-1',
+      reason: 'execute',
+      payload: { toolName: 'execute', input: { command: 'pwd' } },
+    })[0];
+    const approved = mapper.mapMessage({
+      type: 'tool-result',
+      callId: 'call-qwen-1',
+      toolName: 'execute',
+      result: { status: 'approved', decision: 'approved' },
+    });
+    const end = mapper.mapMessage({
+      type: 'tool-result',
+      callId: 'call-qwen-1',
+      toolName: 'execute',
+      result: { ok: true },
+    })[0];
+
+    expect(approved).toHaveLength(0);
+    expect(start.ev.t).toBe('tool-call-start');
+    expect(end.ev.t).toBe('tool-call-end');
+    if (start.ev.t === 'tool-call-start' && end.ev.t === 'tool-call-end') {
+      expect(end.ev.call).toBe(start.ev.call);
+    }
+  });
 });
 
 describe('AcpSessionManager thinking mapping', () => {
@@ -319,7 +380,6 @@ describe('AcpSessionManager ignored messages', () => {
   it('ignores non-session-protocol ACP messages', () => {
     const mapper = new AcpSessionManager();
     const messages: AgentMessage[] = [
-      { type: 'permission-request', id: 'p1', reason: 'ReadFile', payload: {} },
       { type: 'permission-response', id: 'p1', approved: true },
       { type: 'token-count', total: 1 },
       { type: 'fs-edit', description: 'edit' },
